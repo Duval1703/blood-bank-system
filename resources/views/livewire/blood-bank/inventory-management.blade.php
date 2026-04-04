@@ -134,12 +134,24 @@
                                     <select wire:model="donor_id" class="w-full border rounded px-3 py-2">
                                         <option value="">Select Donor</option>
                                         @foreach($donors as $donor)
-                                            <option value="{{ $donor->id }}">{{ $donor->full_name }} ({{ $donor->blood_type }})</option>
+                                            <option value="{{ $donor->id }}">{{ $donor->full_name }} ({{ $donor->blood_type }}) - {{ $donor->establishment->name ?? 'Unknown' }}</option>
                                         @endforeach
                                     </select>
                                     @error('donor_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Donation Establishment *</label>
+                            <select wire:model="donation_establishment_id" class="w-full border rounded px-3 py-2" required>
+                                <option value="">Select Establishment</option>
+                                @foreach($establishments as $establishment)
+                                    <option value="{{ $establishment->id }}">{{ $establishment->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('donation_establishment_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 mt-1">Where the blood will be stored/donated</p>
                         </div>
 
                         <div>

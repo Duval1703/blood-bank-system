@@ -1,0 +1,22 @@
+# Railway Deployment Configuration for Blood Bank Management System
+# This file tells Railway (Nixpacks) how to build and deploy the Laravel app
+
+[phases.setup]
+nixPkgs = ["php82", "php82Packages.composer", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "composer install --no-dev --optimize-autoloader --no-interaction",
+  "npm ci --include=dev"
+]
+
+[phases.build]
+cmds = [
+  "npm run build",
+  "php artisan config:cache",
+  "php artisan route:cache",
+  "php artisan view:cache"
+]
+
+[start]
+cmd = "php artisan migrate --force && php artisan db:seed --force --class=EstablishmentSeeder && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"

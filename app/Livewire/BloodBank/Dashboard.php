@@ -26,28 +26,35 @@ class Dashboard extends Component
 
     public function loadDashboardData()
     {
-        // Single blood bank - no establishment filtering needed
+        // Get current user's establishment
+        $establishmentId = Auth::user()->establishment_id;
 
-        // Summary Statistics
-        $this->totalBloodUnits = BloodUnit::where('status', 'Available')->count();
-        $this->totalDonors = Donor::count();
+        // Summary Statistics - Establishment Specific
+        $this->totalBloodUnits = BloodUnit::where('status', 'Available')
+            ->where('establishment_id', $establishmentId)
+            ->count();
+        $this->totalDonors = Donor::where('establishment_id', $establishmentId)->count();
         $this->criticalAlertsCount = Alert::where('is_active', true)
             ->where('severity', 'Critical')
+            ->where('establishment_id', $establishmentId)
             ->count();
 
-        // Blood Type Inventory Grid
+        // Blood Type Inventory Grid - Establishment Specific
         $bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         foreach ($bloodTypes as $type) {
             $available = BloodUnit::where('blood_type', $type)
                 ->where('status', 'Available')
+                ->where('establishment_id', $establishmentId)
                 ->count();
 
             $reserved = BloodUnit::where('blood_type', $type)
                 ->where('status', 'Reserved')
+                ->where('establishment_id', $establishmentId)
                 ->count();
 
             $nearExpiry = BloodUnit::where('blood_type', $type)
                 ->where('status', 'Near Expiry')
+                ->where('establishment_id', $establishmentId)
                 ->count();
 
             $this->bloodTypeStock[$type] = [
@@ -59,22 +66,24 @@ class Dashboard extends Component
             ];
         }
 
-        // Recent Alerts
+        // Recent Alerts - Establishment Specific
         $this->recentAlerts = Alert::where('is_active', true)
+            ->where('establishment_id', $establishmentId)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
-        // Upcoming Expirations (next 7 days)
+        // Upcoming Expirations (next 7 days) - Establishment Specific
         $sevenDaysFromNow = now()->addDays(7);
         $this->upcomingExpirations = BloodUnit::whereBetween('expiry_date', [now(), $sevenDaysFromNow])
             ->where('status', '!=', 'Expired')
+            ->where('establishment_id', $establishmentId)
             ->with('donor')
             ->orderBy('expiry_date', 'asc')
             ->limit(10)
             ->get();
 
-        // Usage Trends (last 30 days)
+        // Usage Trends (last 30 days) - Establishment Specific
         $this->loadUsageTrends();
     }
 
@@ -92,10 +101,12 @@ class Dashboard extends Component
     private function loadUsageTrends(): void
     {
         $thirtyDaysAgo = now()->subDays(30);
+        $establishmentId = Auth::user()->establishment_id;
         
         try {
-            // Try to get usage data from distributions
+            // Try to get usage data from distributions - Establishment Specific
             $usageData = \App\Models\Distribution::where('created_at', '>=', $thirtyDaysAgo)
+                ->where('establishment_id', $establishmentId)
                 ->selectRaw('DATE(created_at) as date, COUNT(*) as units_used')
                 ->groupBy('date')
                 ->orderBy('date', 'asc')

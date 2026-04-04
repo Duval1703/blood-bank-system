@@ -66,6 +66,22 @@
             "@lint:check",
             "@php artisan test"
         ],
+        "production": [
+            "composer install --no-dev --optimize-autoloader --no-interaction",
+            "npm ci --omit=dev",
+            "npm run build",
+            "@php artisan config:cache",
+            "@php artisan route:cache",
+            "@php artisan view:cache"
+        ],
+        "deploy:prepare": [
+            "@production",
+            "@php artisan migrate --force",
+            "@php artisan db:seed --force --class=EstablishmentSeeder"
+        ],
+        "post-install-cmd": [
+            "@php artisan key:generate --ansi --no-interaction --force || true"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

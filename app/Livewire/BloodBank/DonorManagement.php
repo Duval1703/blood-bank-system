@@ -76,12 +76,12 @@ class DonorManagement extends Component
 
     public function mount()
     {
-        // No establishment filtering needed for single blood bank
+        // Each establishment should have its own donors
     }
 
     public function render()
     {
-        $query = Donor::query();
+        $query = Donor::where('establishment_id', Auth::user()->establishment_id);
 
         // Apply filters
         if ($this->search) {
@@ -188,7 +188,7 @@ class DonorManagement extends Component
         $this->validate();
 
         Donor::create([
-            'donor_id_code' => Donor::generateDonorIdCode(),
+            'donor_id_code' => Donor::generateDonorIdCodeForEstablishment(auth()->user()->establishment_id),
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'date_of_birth' => $this->date_of_birth,

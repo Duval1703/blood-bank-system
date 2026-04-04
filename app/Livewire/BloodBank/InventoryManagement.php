@@ -32,6 +32,7 @@ class InventoryManagement extends Component
     public $volume = 450;
     public $donor_id;
     public $donor_id_code;
+    public $donation_establishment_id; // Establishment where blood is being donated
     public $notes;
     public $screening_results = [];
     public $selectedDonor = null; // To store donor info when ID code is entered
@@ -66,6 +67,7 @@ class InventoryManagement extends Component
         'volume' => 'required|integer|min:200|max:600',
         'donor_id' => 'nullable|exists:donors,id',
         'donor_id_code' => 'nullable|exists:donors,donor_id_code',
+        'donation_establishment_id' => 'required|exists:establishments,id',
         'notes' => 'nullable|string',
     ];
 
@@ -100,17 +102,19 @@ class InventoryManagement extends Component
             $query->where('status', $this->statusFilter);
         }
 
-
         if ($this->dateFilter) {
             $query->whereDate('created_at', $this->dateFilter);
         }
 
         $bloodUnits = $query->orderBy('created_at', 'desc')->paginate(15);
 
+        // Allow donors from any establishment for donation
         $donors = Donor::where('is_eligible', true)
-                      ->where('establishment_id', Auth::user()->establishment_id)
                       ->orderBy('last_name')
                       ->get();
+
+        // Get all establishments for donation selection
+        $establishments = \App\Models\Establishment::orderBy('name')->get();
 
         $bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         $statuses = ['Available', 'Reserved', 'Near Expiry', 'Expired', 'Used', 'Discarded'];
@@ -118,6 +122,7 @@ class InventoryManagement extends Component
         return view('livewire.blood-bank.inventory-management', compact(
             'bloodUnits',
             'donors',
+            'establishments',
             'bloodTypes',
             'statuses'
         ))->layout('layouts.blood-bank');
@@ -125,8 +130,9 @@ class InventoryManagement extends Component
 
     public function openAddModal()
     {
-        $this->reset(['blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'donor_id_code', 'notes', 'screening_results', 'selectedDonor']);
+        $this->reset(['blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'donor_id_code', 'donation_establishment_id', 'notes', 'screening_results', 'selectedDonor']);
         $this->unit_number = self::generateUnitNumber();
+        $this->donation_establishment_id = Auth::user()->establishment_id; // Default to current establishment
         $this->showAddModal = true;
     }
 
@@ -172,8 +178,8 @@ class InventoryManagement extends Component
         // Get donor ID from either donor_id or donor_id_code
         $donorId = $this->donor_id;
         if ($this->donor_id_code) {
+            // Allow donors from any establishment
             $donor = Donor::where('donor_id_code', $this->donor_id_code)
-                ->where('establishment_id', Auth::user()->establishment_id)
                 ->first();
             if ($donor) {
                 $donorId = $donor->id;
@@ -194,7 +200,7 @@ class InventoryManagement extends Component
             'expiry_date' => $this->expiry_date,
             'volume' => $this->volume,
             'donor_id' => $donorId,
-            'establishment_id' => $donor->establishment_id ?? auth()->user()->establishment_id,
+            'establishment_id' => $this->donation_establishment_id, // Use selected donation establishment
             'status' => 'Available',
             'notes' => $this->notes,
             'screening_results' => $this->screening_results ?: [

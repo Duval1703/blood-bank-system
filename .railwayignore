@@ -1,0 +1,47 @@
+# Files to ignore during Railway deployment
+
+# Development files
+.env.local
+.env.development
+*.log
+*.tmp
+
+# Testing
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Node modules (will be installed during build)
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (optional - remove if you want docs deployed)
+README.md
+docs/
+
+# Local database
+database/database.sqlite
+
+# Storage (will be created on deployment)
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+
+# Public storage
+storage/app/public/*

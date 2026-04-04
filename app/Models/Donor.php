@@ -109,6 +109,17 @@ class Donor extends Model
         return $code;
     }
 
+    public static function generateDonorIdCodeForEstablishment(int $establishmentId): string
+    {
+        do {
+            // Get establishment-specific prefix
+            $establishmentCode = \App\Models\Establishment::find($establishmentId)?->code ?? 'EST';
+            $code = $establishmentCode . '-' . str_pad(random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+        } while (self::where('donor_id_code', $code)->exists());
+        
+        return $code;
+    }
+
     protected static function booted()
     {
         static::created(function ($donor) {
