@@ -43,9 +43,8 @@ class InventoryManagement extends Component
         $year = date('Y');
         $prefix = 'BU' . $year;
         
-        // Get the highest unit number for this year and current establishment
+        // Get the highest unit number for this year across ALL establishments (globally unique)
         $lastUnit = BloodUnit::where('unit_number', 'like', $prefix . '%')
-            ->where('establishment_id', Auth::user()->establishment_id)
             ->orderBy('unit_number', 'desc')
             ->first();
         
@@ -57,7 +56,15 @@ class InventoryManagement extends Component
             $newNumber = 1;
         }
         
-        return $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        $unitNumber = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        
+        // Double-check uniqueness (in case of race conditions)
+        while (BloodUnit::where('unit_number', $unitNumber)->exists()) {
+            $newNumber++;
+            $unitNumber = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        }
+        
+        return $unitNumber;
     }
 
     // Removed global $rules to prevent automatic validation on field updates
@@ -196,8 +203,11 @@ class InventoryManagement extends Component
 
             $donor = Donor::findOrFail($this->donor_id);
 
+            // Regenerate unit number right before saving to ensure uniqueness
+            $this->unit_number = self::generateUnitNumber();
+
             BloodUnit::create([
-                'unit_number' => $this->unit_number, // Use auto-generated number
+                'unit_number' => $this->unit_number, // Use freshly generated unique number
                 'blood_type' => $this->blood_type,
                 'collection_date' => $this->collection_date,
                 'expiry_date' => $this->expiry_date,
