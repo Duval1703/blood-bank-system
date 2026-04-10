@@ -1,10 +1,10 @@
 <div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex items-center justify-between">
+    <div class="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Blood Inventory Management</h1>
-            <p class="text-gray-600 mt-1">Manage blood units and track inventory</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Blood Inventory Management</h1>
+            <p class="text-sm sm:text-base text-gray-600 mt-1">Manage blood units and track inventory</p>
         </div>
-        <button wire:click="openAddModal" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-colors flex items-center space-x-2">
+        <button wire:click="openAddModal" class="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium shadow-lg transition-colors flex items-center justify-center space-x-2 w-full sm:w-auto">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
@@ -42,43 +42,80 @@
 
     <!-- Blood Units Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Number</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Blood Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Donor</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Collection Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($bloodUnits as $unit)
+        <!-- Desktop Table -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $unit->unit_number }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap"><span class="font-semibold text-red-600">{{ $unit->blood_type }}</span></td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $unit->donor->full_name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $unit->collection_date->format('M d, Y') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $unit->expiry_date->format('M d, Y') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs rounded bg-{{ $this->getStatusColor($unit->status) }}-100 text-{{ $this->getStatusColor($unit->status) }}-800">
-                                {{ $unit->status }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <button wire:click="openViewModal({{ $unit->id }})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
-                        </td>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Number</th>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Blood Type</th>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Donor</th>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Collection Date</th>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">No blood units found</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="px-6 py-4">
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse($bloodUnits as $unit)
+                        <tr>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">{{ $unit->unit_number }}</td>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap"><span class="font-semibold text-red-600">{{ $unit->blood_type }}</span></td>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">{{ $unit->donor->full_name }}</td>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">{{ $unit->collection_date->format('M d, Y') }}</td>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">{{ $unit->expiry_date->format('M d, Y') }}</td>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs rounded bg-{{ $this->getStatusColor($unit->status) }}-100 text-{{ $this->getStatusColor($unit->status) }}-800">
+                                    {{ $unit->status }}
+                                </span>
+                            </td>
+                            <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
+                                <button wire:click="openViewModal({{ $unit->id }})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">No blood units found</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden divide-y divide-gray-200">
+            @forelse($bloodUnits as $unit)
+                <div class="p-4 hover:bg-gray-50">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ $unit->unit_number }}</p>
+                            <p class="text-sm text-gray-600">{{ $unit->donor->full_name }}</p>
+                        </div>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                            {{ $unit->blood_type }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                        <div>
+                            <span class="font-medium">Collection:</span> {{ $unit->collection_date->format('M d, Y') }}
+                        </div>
+                        <div>
+                            <span class="font-medium">Expiry:</span> {{ $unit->expiry_date->format('M d, Y') }}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="px-2 py-1 text-xs rounded bg-{{ $this->getStatusColor($unit->status) }}-100 text-{{ $this->getStatusColor($unit->status) }}-800">
+                            {{ $unit->status }}
+                        </span>
+                        <button wire:click="openViewModal({{ $unit->id }})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View Details</button>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center text-gray-500">No blood units found</div>
+            @endforelse
+        </div>
+
+        <div class="px-4 sm:px-6 py-4 border-t border-gray-200">
             {{ $bloodUnits->links() }}
         </div>
     </div>
