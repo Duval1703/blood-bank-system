@@ -146,37 +146,63 @@
                             @error('blood_type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Donor Selection *</label>
-                            <div class="space-y-2">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Enter Donor ID Code:</label>
-                                    <div class="flex space-x-2">
-                                        <input type="text" wire:model="donor_id_code" class="flex-1 border rounded px-3 py-2" placeholder="e.g., DON-123456">
-                                        <button type="button" wire:click="lookupDonorByCode" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                            Lookup
-                                        </button>
-                                    </div>
-                                    @error('donor_id_code') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                @if($selectedDonor)
-                                    <div class="bg-green-50 border border-green-200 rounded p-3">
-                                        <p class="text-sm text-green-800">
-                                            <strong>Selected:</strong> {{ $selectedDonor->full_name }} ({{ $selectedDonor->donor_id_code }}) - {{ $selectedDonor->blood_type }}
-                                        </p>
-                                    </div>
-                                @endif
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Or select from list:</label>
-                                    <select wire:model="donor_id" class="w-full border rounded px-3 py-2">
-                                        <option value="">Select Donor</option>
-                                        @foreach($donors as $donor)
-                                            <option value="{{ $donor->id }}">{{ $donor->full_name }} ({{ $donor->blood_type }}) - {{ $donor->establishment->name ?? 'Unknown' }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('donor_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Donor ID Code *</label>
+                            <div class="flex space-x-2">
+                                <input 
+                                    type="text" 
+                                    wire:model.live.debounce.500ms="donor_id_code" 
+                                    class="flex-1 border rounded px-3 py-2" 
+                                    placeholder="e.g., DON-123456"
+                                    required
+                                >
+                                <button 
+                                    type="button" 
+                                    wire:click="lookupDonorByCode" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center space-x-1"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    <span>Search</span>
+                                </button>
                             </div>
+                            @error('donor_id_code') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            
+                            @if($selectedDonor)
+                                <div class="mt-3 bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-start space-x-3">
+                                        <svg class="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-semibold text-green-800">Donor Found</p>
+                                            <div class="mt-2 text-sm text-green-700 space-y-1">
+                                                <p><strong>Name:</strong> {{ $selectedDonor->full_name }}</p>
+                                                <p><strong>ID:</strong> {{ $selectedDonor->donor_id_code }}</p>
+                                                <p><strong>Blood Type:</strong> <span class="font-semibold">{{ $selectedDonor->blood_type }}</span></p>
+                                                <p><strong>Contact:</strong> {{ $selectedDonor->phone }}</p>
+                                                @if($selectedDonor->email)
+                                                    <p><strong>Email:</strong> {{ $selectedDonor->email }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @elseif($donorNotFound)
+                                <div class="mt-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-start space-x-3">
+                                        <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-semibold text-red-800">Donor Not Found</p>
+                                            <p class="text-sm text-red-700 mt-1">No donor found with ID: {{ $donor_id_code }}</p>
+                                            <p class="text-xs text-red-600 mt-1">Please check the ID and try again.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                         <div>

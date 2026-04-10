@@ -36,6 +36,7 @@ class InventoryManagement extends Component
     public $notes;
     public $screening_results = [];
     public $selectedDonor = null; // To store donor info when ID code is entered
+    public $donorNotFound = false; // Flag to show donor not found message
 
     public static function generateUnitNumber(): string
     {
@@ -130,7 +131,7 @@ class InventoryManagement extends Component
 
     public function openAddModal()
     {
-        $this->reset(['blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'donor_id_code', 'donation_establishment_id', 'notes', 'screening_results', 'selectedDonor']);
+        $this->reset(['blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'donor_id_code', 'donation_establishment_id', 'notes', 'screening_results', 'selectedDonor', 'donorNotFound']);
         $this->unit_number = self::generateUnitNumber();
         $this->donation_establishment_id = Auth::user()->establishment_id; // Default to current establishment
         $this->showAddModal = true;
@@ -161,11 +162,17 @@ class InventoryManagement extends Component
         $this->showAddModal = false;
         $this->showEditModal = false;
         $this->showViewModal = false;
-        $this->reset(['unit_number', 'blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'notes', 'screening_results']);
+        $this->reset(['unit_number', 'blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'donor_id_code', 'notes', 'screening_results', 'selectedDonor', 'donorNotFound']);
     }
 
     public function addBloodUnit()
     {
+        // Validate donor is selected
+        if (!$this->donor_id) {
+            session()->flash('error', 'Please enter a valid donor ID and search for the donor.');
+            return;
+        }
+
         // Validate without unit_number since it's auto-generated
         $this->validate([
             'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
@@ -173,25 +180,10 @@ class InventoryManagement extends Component
             'expiry_date' => 'required|date|after:collection_date',
             'volume' => 'required|integer|min:200|max:600',
             'notes' => 'nullable|string',
+            'donor_id' => 'required|exists:donors,id',
         ]);
 
-        // Get donor ID from either donor_id or donor_id_code
-        $donorId = $this->donor_id;
-        if ($this->donor_id_code) {
-            // Allow donors from any establishment
-            $donor = Donor::where('donor_id_code', $this->donor_id_code)
-                ->first();
-            if ($donor) {
-                $donorId = $donor->id;
-            }
-        }
-
-        if (!$donorId) {
-            session()->flash('error', 'Please select a donor.');
-            return;
-        }
-
-        $donor = Donor::findOrFail($donorId);
+        $donor = Donor::findOrFail($this->donor_id);
 
         BloodUnit::create([
             'unit_number' => $this->unit_number, // Use auto-generated number
@@ -199,7 +191,7 @@ class InventoryManagement extends Component
             'collection_date' => $this->collection_date,
             'expiry_date' => $this->expiry_date,
             'volume' => $this->volume,
-            'donor_id' => $donorId,
+            'donor_id' => $this->donor_id,
             'establishment_id' => $this->donation_establishment_id, // Use selected donation establishment
             'status' => 'Available',
             'notes' => $this->notes,
@@ -282,19 +274,39 @@ class InventoryManagement extends Component
 
     public function lookupDonorByCode()
     {
-        $this->validate([
-            'donor_id_code' => 'required|exists:donors,donor_id_code'
-        ]);
+        // Reset previous states
+        $this->selectedDonor = null;
+        $this->donorNotFound = false;
+        $this->donor_id = null;
 
+        if (empty($this->donor_id_code)) {
+            return;
+        }
+
+        // Search for donor by ID code
         $donor = Donor::where('donor_id_code', $this->donor_id_code)->first();
         
         if ($donor) {
             $this->selectedDonor = $donor;
             $this->donor_id = $donor->id;
-            $this->blood_type = $donor->blood_type;
-            session()->flash('message', "Donor found: {$donor->full_name} ({$donor->donor_id_code})");
+            $this->blood_type = $donor->blood_type; // Auto-fill blood type
+            $this->donorNotFound = false;
         } else {
-            session()->flash('error', 'Donor not found with this ID code.');
+            $this->donorNotFound = true;
+            $this->selectedDonor = null;
+            $this->donor_id = null;
+        }
+    }
+
+    public function updatedDonorIdCode()
+    {
+        // Auto-search when user types (debounced by wire:model.live.debounce)
+        if (strlen($this->donor_id_code) >= 3) {
+            $this->lookupDonorByCode();
+        } else {
+            $this->selectedDonor = null;
+            $this->donorNotFound = false;
+            $this->donor_id = null;
         }
     }
 
