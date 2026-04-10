@@ -60,17 +60,8 @@ class InventoryManagement extends Component
         return $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
     }
 
-    protected $rules = [
-        'unit_number' => 'required|string|unique:blood_units,unit_number',
-        'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-        'collection_date' => 'required|date|before_or_equal:today',
-        'expiry_date' => 'required|date|after:collection_date',
-        'volume' => 'required|integer|min:200|max:600',
-        'donor_id' => 'nullable|exists:donors,id',
-        'donor_id_code' => 'nullable|exists:donors,donor_id_code',
-        'donation_establishment_id' => 'required|exists:establishments,id',
-        'notes' => 'nullable|string',
-    ];
+    // Removed global $rules to prevent automatic validation on field updates
+    // Validation is now done explicitly in addBloodUnit() method
 
     protected $listeners = ['refreshComponent' => '$refresh'];
 
@@ -167,45 +158,56 @@ class InventoryManagement extends Component
 
     public function addBloodUnit()
     {
-        // Validate donor is selected
-        if (!$this->donor_id) {
-            session()->flash('error', 'Please enter a valid donor ID and search for the donor.');
-            return;
+        try {
+            // Validate donor is selected
+            if (!$this->donor_id) {
+                session()->flash('error', 'Please enter a valid donor ID and search for the donor.');
+                return;
+            }
+
+            // Validate without unit_number since it's auto-generated
+            $this->validate([
+                'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+                'collection_date' => 'required|date|before_or_equal:today',
+                'expiry_date' => 'required|date|after:collection_date',
+                'volume' => 'required|integer|min:200|max:600',
+                'notes' => 'nullable|string',
+                'donor_id' => 'required|exists:donors,id',
+                'donation_establishment_id' => 'required|exists:establishments,id',
+            ]);
+
+            $donor = Donor::findOrFail($this->donor_id);
+
+            BloodUnit::create([
+                'unit_number' => $this->unit_number, // Use auto-generated number
+                'blood_type' => $this->blood_type,
+                'collection_date' => $this->collection_date,
+                'expiry_date' => $this->expiry_date,
+                'volume' => $this->volume,
+                'donor_id' => $this->donor_id,
+                'establishment_id' => $this->donation_establishment_id, // Use selected donation establishment
+                'status' => 'Available',
+                'notes' => $this->notes,
+                'screening_results' => $this->screening_results ?: [
+                    'HIV' => 'Negative',
+                    'Hepatitis B' => 'Negative',
+                    'Hepatitis C' => 'Negative',
+                    'Syphilis' => 'Negative',
+                ],
+            ]);
+
+            $this->closeModal();
+            $this->dispatch('refreshComponent');
+            session()->flash('message', 'Blood unit added successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Error adding blood unit: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'donor_id' => $this->donor_id,
+                'establishment_id' => $this->donation_establishment_id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            session()->flash('error', 'Error adding blood unit: ' . $e->getMessage());
         }
-
-        // Validate without unit_number since it's auto-generated
-        $this->validate([
-            'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'collection_date' => 'required|date|before_or_equal:today',
-            'expiry_date' => 'required|date|after:collection_date',
-            'volume' => 'required|integer|min:200|max:600',
-            'notes' => 'nullable|string',
-            'donor_id' => 'required|exists:donors,id',
-        ]);
-
-        $donor = Donor::findOrFail($this->donor_id);
-
-        BloodUnit::create([
-            'unit_number' => $this->unit_number, // Use auto-generated number
-            'blood_type' => $this->blood_type,
-            'collection_date' => $this->collection_date,
-            'expiry_date' => $this->expiry_date,
-            'volume' => $this->volume,
-            'donor_id' => $this->donor_id,
-            'establishment_id' => $this->donation_establishment_id, // Use selected donation establishment
-            'status' => 'Available',
-            'notes' => $this->notes,
-            'screening_results' => $this->screening_results ?: [
-                'HIV' => 'Negative',
-                'Hepatitis B' => 'Negative',
-                'Hepatitis C' => 'Negative',
-                'Syphilis' => 'Negative',
-            ],
-        ]);
-
-        $this->closeModal();
-        $this->dispatch('refreshComponent');
-        session()->flash('message', 'Blood unit added successfully.');
     }
 
     public function updateBloodUnit()
@@ -316,8 +318,14 @@ class InventoryManagement extends Component
 
     public function updatedCollectionDate()
     {
-        if ($this->collection_date) {
-            $this->expiry_date = date('Y-m-d', strtotime($this->collection_date . ' +42 days'));
+        try {
+            if ($this->collection_date) {
+                // Automatically set expiry date to 42 days after collection
+                $this->expiry_date = date('Y-m-d', strtotime($this->collection_date . ' +42 days'));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error updating collection date: ' . $e->getMessage());
+            // Silently fail - user can manually set expiry date
         }
     }
 
