@@ -125,6 +125,12 @@ class InventoryManagement extends Component
         $this->reset(['blood_type', 'collection_date', 'expiry_date', 'volume', 'donor_id', 'donor_id_code', 'donation_establishment_id', 'notes', 'screening_results', 'selectedDonor', 'donorNotFound']);
         $this->unit_number = self::generateUnitNumber();
         $this->donation_establishment_id = Auth::user()->establishment_id; // Default to current establishment
+        
+        // Set default collection date to today
+        $this->collection_date = date('Y-m-d');
+        // Auto-calculate expiry date (42 days from today)
+        $this->expiry_date = date('Y-m-d', strtotime($this->collection_date . ' +42 days'));
+        
         $this->showAddModal = true;
     }
 
@@ -159,8 +165,17 @@ class InventoryManagement extends Component
     public function addBloodUnit()
     {
         try {
+            \Log::info('addBloodUnit method called', [
+                'donor_id' => $this->donor_id,
+                'blood_type' => $this->blood_type,
+                'collection_date' => $this->collection_date,
+                'expiry_date' => $this->expiry_date,
+                'volume' => $this->volume,
+            ]);
+            
             // Validate donor is selected
             if (!$this->donor_id) {
+                \Log::warning('No donor selected');
                 session()->flash('error', 'Please enter a valid donor ID and search for the donor.');
                 return;
             }

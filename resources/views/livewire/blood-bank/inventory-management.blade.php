@@ -225,14 +225,16 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Collection Date *</label>
-                            <input type="date" wire:model="collection_date" class="w-full border rounded px-3 py-2" required max="{{ date('Y-m-d') }}">
+                            <input type="date" wire:model.live="collection_date" class="w-full border rounded px-3 py-2" required max="{{ date('Y-m-d') }}">
                             @error('collection_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 mt-1">Expiry date will be automatically set to 42 days after collection</p>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date *</label>
-                            <input type="date" wire:model="expiry_date" class="w-full border rounded px-3 py-2" required>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                            <input type="date" wire:model="expiry_date" class="w-full border rounded px-3 py-2 bg-gray-100" readonly>
                             @error('expiry_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 mt-1">Auto-calculated (42 days from collection date)</p>
                         </div>
 
                         <div class="col-span-2">
