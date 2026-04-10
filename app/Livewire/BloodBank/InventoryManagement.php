@@ -176,12 +176,13 @@ class InventoryManagement extends Component
             // Validate donor is selected
             if (!$this->donor_id) {
                 \Log::warning('No donor selected');
+                $this->dispatch('error', 'Please enter a valid donor ID and search for the donor.');
                 session()->flash('error', 'Please enter a valid donor ID and search for the donor.');
                 return;
             }
 
-            // Validate without unit_number since it's auto-generated
-            $this->validate([
+            // Validate fields
+            $validated = $this->validate([
                 'blood_type' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
                 'collection_date' => 'required|date|before_or_equal:today',
                 'expiry_date' => 'required|date|after:collection_date',
@@ -190,6 +191,8 @@ class InventoryManagement extends Component
                 'donor_id' => 'required|exists:donors,id',
                 'donation_establishment_id' => 'required|exists:establishments,id',
             ]);
+            
+            \Log::info('Validation passed', $validated);
 
             $donor = Donor::findOrFail($this->donor_id);
 
@@ -211,9 +214,11 @@ class InventoryManagement extends Component
                 ],
             ]);
 
+            \Log::info('Blood unit created successfully');
+            
+            session()->flash('message', 'Blood unit added successfully!');
             $this->closeModal();
-            $this->dispatch('refreshComponent');
-            session()->flash('message', 'Blood unit added successfully.');
+            return redirect()->route('blood-bank.inventory');
         } catch (\Exception $e) {
             \Log::error('Error adding blood unit: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),

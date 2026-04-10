@@ -1,4 +1,18 @@
 <div class="container mx-auto px-4 py-8">
+    <!-- Success/Error Messages -->
+    @if (session()->has('message'))
+        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ session('message') }}</span>
+        </div>
+    @endif
+    
+    @if (session()->has('error'))
+        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <div class="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Blood Inventory Management</h1>
@@ -127,6 +141,21 @@
                 <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-red-700 border-b border-red-800">
                     <h3 class="text-xl font-bold text-white">Add New Blood Unit</h3>
                 </div>
+                
+                <!-- Success/Error Messages -->
+                @if (session()->has('message'))
+                    <div class="mx-6 mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                        <span class="block sm:inline">{{ session('message') }}</span>
+                    </div>
+                @endif
+                
+                @if (session()->has('error'))
+                    <div class="mx-6 mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">Error!</strong>
+                        <span class="block sm:inline">{{ session('error') }}</span>
+                    </div>
+                @endif
+                
                 <form wire:submit.prevent="addBloodUnit" class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
