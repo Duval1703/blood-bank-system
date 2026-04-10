@@ -151,7 +151,7 @@
                             <div class="flex space-x-2">
                                 <input 
                                     type="text" 
-                                    wire:model.live.debounce.500ms="donor_id_code" 
+                                    wire:model="donor_id_code" 
                                     class="flex-1 border rounded px-3 py-2" 
                                     placeholder="e.g., DON-123456"
                                     required

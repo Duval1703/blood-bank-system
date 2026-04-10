@@ -298,17 +298,8 @@ class InventoryManagement extends Component
         }
     }
 
-    public function updatedDonorIdCode()
-    {
-        // Auto-search when user types (debounced by wire:model.live.debounce)
-        if (strlen($this->donor_id_code) >= 3) {
-            $this->lookupDonorByCode();
-        } else {
-            $this->selectedDonor = null;
-            $this->donorNotFound = false;
-            $this->donor_id = null;
-        }
-    }
+    // Removed auto-search to prevent server errors
+    // Users must click the "Search" button to lookup donor
 
     public function getStatusColor(string $status): string
     {
